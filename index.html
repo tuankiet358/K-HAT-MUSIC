@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-HAT MUSIC | Offline Mode</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <style>
+        :root { --green: #1db954; --bg: #000; --sidebar: #000; --main: #121212; --grey: #b3b3b3; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+
+        .container { display: grid; grid-template-columns: 240px 1fr; height: 100vh; grid-template-rows: 1fr 100px; }
+
+        /* Sidebar xịn */
+        .sidebar { background: var(--sidebar); padding: 24px; border-right: 1px solid #282828; }
+        .logo { color: var(--green); font-size: 26px; font-weight: 900; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+        .nav-item { color: var(--grey); padding: 12px 0; cursor: pointer; display: flex; align-items: center; gap: 15px; font-weight: bold; transition: 0.3s; }
+        .nav-item:hover, .nav-item.active { color: white; }
+
+        /* Main View - Spotify Style */
+        .main { background: linear-gradient(to bottom, #222, #121212); overflow-y: auto; padding: 40px; }
+        .hero { display: flex; align-items: flex-end; gap: 30px; margin-bottom: 40px; }
+        .hero img { width: 232px; height: 232px; border-radius: 8px; box-shadow: 0 12px 50px rgba(0,0,0,0.7); }
+        .hero h1 { font-size: 72px; margin: 10px 0; letter-spacing: -3px; font-weight: 800; }
+
+        .song-list { width: 100%; border-collapse: collapse; }
+        .song-row { transition: 0.2s; cursor: pointer; }
+        .song-row:hover { background: rgba(255,255,255,0.1); }
+        .song-row td { padding: 12px; color: var(--grey); font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .song-name { color: white; font-weight: 500; font-size: 16px !important; }
+        .playing { color: var(--green) !important; }
+
+        /* Player Bar chuẩn */
+        .player { grid-column: 1 / 3; background: #181818; border-top: 1px solid #282828; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        .track-info { display: flex; align-items: center; gap: 15px; width: 30%; }
+        .track-info img { width: 56px; height: 56px; border-radius: 4px; }
+
+        .controls { width: 40%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .play-btn { background: white; color: black; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .play-btn:hover { transform: scale(1.1); }
+        
+        .progress-area { width: 100%; display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--grey); }
+        .bar-bg { flex: 1; height: 4px; background: #4f4f4f; border-radius: 2px; position: relative; }
+        .bar-fill { height: 100%; background: white; width: 0%; border-radius: 2px; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .container { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <aside class="sidebar">
+        <div class="logo"><i class="material-icons">play_circle_filled</i> K-HAT</div>
+        <div class="nav-item active"><i class="material-icons">home</i> Trang chủ</div>
+        <div class="nav-item"><i class="material-icons">search</i> Tìm kiếm</div>
+        <div class="nav-item"><i class="material-icons">library_music</i> Thư viện</div>
+    </aside>
+
+    <main class="main">
+        <div class="hero">
+            <img id="h-img" src="https://img.youtube.com/vi/LSMDNL4n0kM/maxresdefault.jpg">
+            <div>
+                <p style="font-size: 12px; font-weight: bold;">PLAYLIST</p>
+                <h1>This Is Đen</h1>
+                <p style="color: var(--grey);">YOUTUBE ĐEN VÂU</p>
+            </div>
+        </div>
+
+        <table class="song-list">
+            <tbody id="list-body"></tbody>
+        </table>
+    </main>
+
+    <footer class="player">
+        <div class="track-info">
+            <img id="p-img" src="https://img.youtube.com/vi/LSMDNL4n0kM/maxresdefault.jpg">
+            <div>
+                <div id="p-title" style="font-weight: bold; font-size: 14px;">Chọn bài để nghe</div>
+                <div style="color: var(--grey); font-size: 12px;">Đen Vâu</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div style="display:flex; align-items:center; gap:25px;">
+                <i class="material-icons" style="color:var(--grey); cursor:pointer" onclick="prev()">skip_previous</i>
+                <div class="play-btn" id="master-play"><i class="material-icons">play_arrow</i></div>
+                <i class="material-icons" style="color:var(--grey); cursor:pointer" onclick="next()">skip_next</i>
+            </div>
+            <div class="progress-area">
+                <span id="time-cur">0:00</span>
+                <div class="bar-bg"><div id="fill" class="bar-fill"></div></div>
+                <span id="time-total">0:00</span>
+            </div>
+        </div>
+        <div style="width: 30%; text-align: right;">
+            <i class="material-icons" style="color:var(--grey)">volume_up</i>
+        </div>
+    </footer>
+</div>
+
+<audio id="audio-core"></audio>
+
+<script>
+    const songs = [
+        { name: "Hai Triệu Năm", file: "hai_trieu_nam.mp3", id: "LSMDNL4n0kM" },
+        { name: "Bài Này Chill Phết", file: "bai_nay_chill_phet.mp3", id: "ddaEtFOsFeM" },
+        { name: "Lối Nhỏ", file: "loi_nho.mp3", id: "KKc_RMln5UY" },
+        { name: "Mang Tiền Về Cho Mẹ", file: "mang_tien_ve_cho_me.mp3", id: "UVbv-PJXm14" },
+        { name: "Trốn Tìm", file: "tron_tim.mp3", id: "Ws-QlpSltr8" }
+    ];
+
+    let index = 0;
+    const audio = document.getElementById('audio-core');
+    const playBtn = document.getElementById('master-play');
+
+    function render() {
+        document.getElementById('list-body').innerHTML = songs.map((s, i) => `
+            <tr class="song-row ${i===index?'playing':''}" onclick="playSong(${i})">
+                <td style="width:50px">${i+1}</td>
+                <td class="song-name">${s.name}</td>
+                <td>Đen Vâu</td>
+                <td>3:45</td>
+            </tr>
+        `).join('');
+    }
+
+    function playSong(i) {
+        index = i;
+        const s = songs[index];
+        audio.src = s.file; // Đọc trực tiếp file mp3 cùng thư mục
+        audio.play();
+        
+        document.getElementById('p-title').innerText = s.name;
+        document.getElementById('p-img').src = `https://img.youtube.com/vi/${s.id}/maxresdefault.jpg`;
+        document.getElementById('h-img').src = `https://img.youtube.com/vi/${s.id}/maxresdefault.jpg`;
+        playBtn.innerHTML = '<i class="material-icons">pause</i>';
+        render();
+    }
+
+    playBtn.onclick = () => {
+        if(audio.src == "") playSong(0);
+        else if(audio.paused) { audio.play(); playBtn.innerHTML = '<i class="material-icons">pause</i>'; }
+        else { audio.pause(); playBtn.innerHTML = '<i class="material-icons">play_arrow</i>'; }
+    };
+
+    function next() { index = (index + 1) % songs.length; playSong(index); }
+    function prev() { index = (index - 1 + songs.length) % songs.length; playSong(index); }
+
+    audio.ontimeupdate = () => {
+        const p = (audio.currentTime / audio.duration) * 100;
+        document.getElementById('fill').style.width = p + '%';
+        document.getElementById('time-cur').innerText = formatTime(audio.currentTime);
+        if(!isNaN(audio.duration)) document.getElementById('time-total').innerText = formatTime(audio.duration);
+    };
+
+    function formatTime(t) {
+        let m = Math.floor(t/60), s = Math.floor(t%60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    render();
+</script>
+</body>
+</html>
+
